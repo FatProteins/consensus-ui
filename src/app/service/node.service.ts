@@ -7,15 +7,15 @@ import {ActionRequest, ActionType} from "../model/node";
 })
 export class NodeService {
   private readonly baseUrl: string = 'http://localhost:{port}/education';
-  private readonly executeAction: string = '/action'
+  private readonly executeActionPath: string = '/action'
 
   constructor(private readonly httpClient: HttpClient) {
   }
 
-  stopNode(nodeIndex: number) {
+  executeAction(nodeIndex: number, actionType: ActionType) {
     let url = this.baseUrl.replace('{port}', `${8080 + nodeIndex - 1}`);
-    url = url + this.executeAction;
-    const request: ActionRequest = {actionType: ActionType.STOP};
+    url = url + this.executeActionPath;
+    const request: ActionRequest = {actionType: actionType};
 
     return this.httpClient.post<void>(url, request);
   }

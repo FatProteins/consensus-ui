@@ -7,7 +7,20 @@
 
   </mat-card-content>
   <mat-card-actions>
-    <button mat-raised-button color="warn" (click)="stopNode()">STOP</button>
-    <button mat-raised-button class="mx-4">SHARE</button>
+    <div *ngIf="isStopped; then startButton else stopButton"></div>
+    <ng-template #startButton>
+      <button mat-raised-button [disabled]="isLoading || isPaused" color="primary" (click)="restartNode()">START
+      </button>
+    </ng-template>
+    <ng-template #stopButton>
+      <button mat-raised-button [disabled]="isLoading || isPaused" color="warn" (click)="stopNode()">STOP</button>
+    </ng-template>
+    <div *ngIf="isPaused; then continueButton else pauseButton"></div>
+    <ng-template #continueButton>
+      <button mat-raised-button [disabled]="isLoading || isStopped" (click)="unpauseNode()">UNPAUSE</button>
+    </ng-template>
+    <ng-template #pauseButton>
+      <button mat-raised-button [disabled]="isLoading || isStopped" (click)="pauseNode()">PAUSE</button>
+    </ng-template>
   </mat-card-actions>
 </mat-card>
