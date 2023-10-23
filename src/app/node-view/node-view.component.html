@@ -1,0 +1,13 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Node {{nodeIndex}}</mat-card-title>
+    <mat-card-subtitle>localhost:{{2379 + nodeIndex - 1}}</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+
+  </mat-card-content>
+  <mat-card-actions>
+    <button mat-raised-button color="warn" (click)="stopNode()">STOP</button>
+    <button mat-raised-button class="mx-4">SHARE</button>
+  </mat-card-actions>
+</mat-card>
