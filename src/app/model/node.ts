@@ -11,3 +11,7 @@ export enum ActionType {
   CONTINUE = "CONTINUE_ACTION_TYPE",
   RESTART = "RESTART_ACTION_TYPE",
 }
+
+export class StepByStepRequest {
+  enable: boolean;
+}

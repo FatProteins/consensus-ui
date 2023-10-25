@@ -69,7 +69,7 @@ export class KvViewComponent implements OnInit, OnDestroy {
         this.dataSource = msg.pairs;
       },
       error: err => {
-        this.snackBar.open(`An error occurred in KV Store connection. ${err.toString()}`, 'OK', {
+        this.snackBar.open('An error occurred in KV Store connection.', 'OK', {
           panelClass: ['mat-toolbar', 'mat-warn'],
           duration: 5000,
         });

@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
-import {ActionRequest, ActionType} from "../model/node";
+import {ActionRequest, ActionType, StepByStepRequest} from "../model/node";
 
 @Injectable({
   providedIn: 'root'
@@ -8,6 +8,8 @@ import {ActionRequest, ActionType} from "../model/node";
 export class NodeService {
   private readonly baseUrl: string = 'http://localhost:{port}/education';
   private readonly executeActionPath: string = '/action'
+  private readonly stepByStepPath: string = '/step-by-step/toggle'
+  private readonly nextStepPath: string = '/step-by-step/next-step'
 
   constructor(private readonly httpClient: HttpClient) {
   }
@@ -18,5 +20,20 @@ export class NodeService {
     const request: ActionRequest = {actionType: actionType};
 
     return this.httpClient.post<void>(url, request);
+  }
+
+  toggleStepByStep(nodeIndex: number, enableStepByStep: boolean) {
+    let url = this.baseUrl.replace('{port}', `${8080 + nodeIndex - 1}`);
+    url = url + this.stepByStepPath;
+    const request: StepByStepRequest = {enable: enableStepByStep};
+
+    return this.httpClient.post<void>(url, request);
+  }
+
+  doNextStep(nodeIndex: number) {
+    let url = this.baseUrl.replace('{port}', `${8080 + nodeIndex - 1}`);
+    url = url + this.nextStepPath;
+
+    return this.httpClient.post<void>(url, null);
   }
 }

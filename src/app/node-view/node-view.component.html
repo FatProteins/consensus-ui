@@ -4,7 +4,13 @@
     <mat-card-subtitle>localhost:{{2379 + nodeIndex - 1}}</mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-
+    <textarea #logTextArea style="width: 100%; height: 300px; resize: none;" readonly [value]="logText"
+              [scrollTop]="lockLogToBottom ? logTextArea.scrollHeight : null"></textarea>
+    <mat-slide-toggle [(ngModel)]="lockLogToBottom" color="primary" style="margin: 10px;">Lock to Bottom
+    </mat-slide-toggle>
+    <mat-slide-toggle [(ngModel)]="showHeartbeatMessages" color="primary" style="margin: 10px;">Show Heartbeat
+      Messages
+    </mat-slide-toggle>
   </mat-card-content>
   <mat-card-actions>
     <div *ngIf="isStopped; then startButton else stopButton"></div>

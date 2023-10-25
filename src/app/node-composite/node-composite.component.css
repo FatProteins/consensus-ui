@@ -1,3 +1,7 @@
 .card-box {
   margin: 10px;
 }
+
+[mat-raised-button] {
+  margin: 5px;
+}
