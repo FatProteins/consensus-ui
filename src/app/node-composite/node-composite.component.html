@@ -1,4 +1,4 @@
-<div style="display: flex; flex-direction: row; margin: 10px;">
+<mat-toolbar>
   <div *ngIf="isStepByStep; then disableStepByStep else enableStepByStep"></div>
   <ng-template #disableStepByStep>
     <button mat-raised-button [disabled]="isLoading" (click)="toggleStepByStep()" color="accent">
@@ -15,7 +15,10 @@
       <fa-icon [icon]="faPlay"></fa-icon>
     </div>
   </button>
-</div>
+</mat-toolbar>
+<!--<div style="display: flex; flex-direction: row; margin: 10px;">-->
+<!---->
+<!--</div>-->
 <div class="card-box" style="display: flex; flex-direction: column;">
   <div style="display: flex; flex-direction: column; justify-content: space-evenly;">
     <div class="card-box" style="flex-grow: 1;">

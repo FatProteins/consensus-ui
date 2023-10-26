@@ -9,6 +9,7 @@ import {NodeService} from "../service/node.service";
 import {MatSnackBar, MatSnackBarModule} from "@angular/material/snack-bar";
 import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 import {faPlay} from "@fortawesome/free-solid-svg-icons";
+import {MatToolbarModule} from "@angular/material/toolbar";
 
 @Component({
   selector: 'node-composite',
@@ -22,7 +23,8 @@ import {faPlay} from "@fortawesome/free-solid-svg-icons";
     MatIconModule,
     NgIf,
     MatSnackBarModule,
-    FontAwesomeModule
+    FontAwesomeModule,
+    MatToolbarModule
   ]
 })
 export class NodeCompositeComponent {

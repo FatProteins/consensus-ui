@@ -73,10 +73,11 @@ export class NodeViewComponent implements OnInit, OnDestroy {
   nodeStateSubscription: Subscription;
 
   ngOnInit() {
-    this.getState();
-    this.subscribeToLog();
-    this.subscribeToClientLog();
-    this.subscribeToNodeState();
+    this.getState().add(() => {
+      this.subscribeToLog();
+      this.subscribeToClientLog();
+      this.subscribeToNodeState();
+    });
   }
 
   ngOnDestroy() {
@@ -164,7 +165,7 @@ export class NodeViewComponent implements OnInit, OnDestroy {
   }
 
   getState() {
-    this.nodeService.getState(this.nodeIndex)
+    return this.nodeService.getState(this.nodeIndex)
       .pipe(finalize(() => {
         this.isLoading = false;
       }))
