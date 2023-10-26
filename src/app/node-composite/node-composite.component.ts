@@ -8,7 +8,7 @@ import {finalize} from "rxjs";
 import {NodeService} from "../service/node.service";
 import {MatSnackBar, MatSnackBarModule} from "@angular/material/snack-bar";
 import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
-import {faPlay, faPlayCircle} from "@fortawesome/free-solid-svg-icons";
+import {faPlay} from "@fortawesome/free-solid-svg-icons";
 
 @Component({
   selector: 'node-composite',

@@ -1,32 +1,50 @@
 <mat-card>
   <mat-card-header>
     <mat-card-title>Node {{nodeIndex}}</mat-card-title>
-    <mat-card-subtitle>localhost:{{2379 + nodeIndex - 1}}</mat-card-subtitle>
+    <mat-card-subtitle>localhost:{{2379 + nodeIndex - 1}} | Term: {{term}} | Index: {{index}} | Applied
+      Index: {{appliedIndex}} | Member ID: {{nodeId}} | <span
+        [ngClass]="{'member-leader' : memberState === 'LEADER', 'member-follower' : memberState === 'FOLLOWER', 'member-unknown' : memberState === 'UNKNOWN STATUS' }">{{memberState}}</span>
+    </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    <textarea #logTextArea style="width: 100%; height: 300px; resize: none;" readonly [value]="logText"
-              [scrollTop]="lockLogToBottom ? logTextArea.scrollHeight : null"></textarea>
-    <mat-slide-toggle [(ngModel)]="lockLogToBottom" color="primary" style="margin: 10px;">Lock to Bottom
-    </mat-slide-toggle>
-    <mat-slide-toggle [(ngModel)]="showHeartbeatMessages" color="primary" style="margin: 10px;">Show Heartbeat
-      Messages
-    </mat-slide-toggle>
+    <div class="flex-column">
+      <div class="flex-row">
+        <textarea #logTextArea style="width: 35%; height: 300px; resize: none;" readonly [value]="logText"
+                  [scrollTop]="lockLogToBottom ? logTextArea.scrollHeight : null"></textarea>
+        <textarea #watchTextArea style="width: 15%; height: 300px; resize: none;" readonly [value]="watchText"
+                  [scrollTop]="lockLogToBottom ? watchTextArea.scrollHeight : null"></textarea>
+        <textarea #clientLogTextArea style="width: 15%; height: 300px; resize: none;" readonly [value]="clientLogText"
+                  [scrollTop]="lockLogToBottom ? clientLogTextArea.scrollHeight : null"></textarea>
+        <div style="vertical-align: top;display: inline-grid; width: 32%; max-width: 32%;">
+          <kv-view [nodeIndex]="nodeIndex" (clientWatchEvents)="addWatchEvents($event)"></kv-view>
+        </div>
+      </div>
+      <div class="flex-row">
+        <mat-slide-toggle [(ngModel)]="lockLogToBottom" color="primary" style="margin: 10px;">Lock to Bottom
+        </mat-slide-toggle>
+        <mat-slide-toggle [(ngModel)]="showHeartbeatMessages" color="primary" style="margin: 10px;">Show Heartbeat
+          Messages
+        </mat-slide-toggle>
+      </div>
+      <put-kv [nodeIndex]="nodeIndex"></put-kv>
+    </div>
   </mat-card-content>
   <mat-card-actions>
     <div *ngIf="isStopped; then startButton else stopButton"></div>
     <ng-template #startButton>
-      <button mat-raised-button [disabled]="isLoading || isPaused" color="primary" (click)="restartNode()">START
+      <button mat-raised-button [disabled]="isLoading" color="primary" (click)="restartNode()">START
       </button>
     </ng-template>
     <ng-template #stopButton>
-      <button mat-raised-button [disabled]="isLoading || isPaused" color="warn" (click)="stopNode()">STOP</button>
+      <button mat-raised-button [disabled]="isLoading" color="warn" (click)="stopNode()">STOP</button>
     </ng-template>
-    <div *ngIf="isPaused; then continueButton else pauseButton"></div>
+    <div *ngIf="isPaused && !isStepByStep; then continueButton else pauseButton"></div>
     <ng-template #continueButton>
-      <button mat-raised-button [disabled]="isLoading || isStopped" (click)="unpauseNode()">UNPAUSE</button>
+      <button mat-raised-button [disabled]="isLoading || isStopped || isStepByStep" (click)="unpauseNode()">UNPAUSE
+      </button>
     </ng-template>
     <ng-template #pauseButton>
-      <button mat-raised-button [disabled]="isLoading || isStopped" (click)="pauseNode()">PAUSE</button>
+      <button mat-raised-button [disabled]="isLoading || isStopped || isStepByStep" (click)="pauseNode()">PAUSE</button>
     </ng-template>
   </mat-card-actions>
 </mat-card>

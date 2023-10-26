@@ -15,3 +15,24 @@ export enum ActionType {
 export class StepByStepRequest {
   enable: boolean;
 }
+
+export class NodeStateResponse {
+  memberState: string;
+  nodeId: string;
+  leader: string;
+  term: number;
+  index: number;
+  appliedIndex: number;
+  statusError: boolean;
+}
+
+export enum NodeState {
+  online = 'online',
+  paused = 'paused',
+  stopped = 'stopped',
+}
+
+export class GetStateResponse {
+  currentState: string;
+  stepByStepMode: boolean;
+}

@@ -1,4 +1,4 @@
-import {Component, inject, OnDestroy, OnInit} from '@angular/core';
+import {Component, EventEmitter, inject, Input, numberAttribute, OnDestroy, OnInit, Output} from '@angular/core';
 import {MatCardModule} from "@angular/material/card";
 import {MatButtonModule} from "@angular/material/button";
 import {MatTableModule} from "@angular/material/table";
@@ -38,11 +38,13 @@ import {NgIf} from "@angular/common";
   ]
 })
 export class KvViewComponent implements OnInit, OnDestroy {
-  isPutLoading = false;
-  isDeleteLoading = false;
+  @Input({transform: numberAttribute})
+  nodeIndex = 1;
 
-  sendToNode = 1;
-  deleteOnNode = 1;
+  @Output()
+  clientWatchEvents = new EventEmitter<string[]>();
+
+  isDeleteLoading = false;
 
   displayedColumns: string[] = ['key', 'value', 'deleteButton'];
   dataSource: KeyValuePair[] = [];
@@ -67,6 +69,9 @@ export class KvViewComponent implements OnInit, OnDestroy {
     this.wsSubscription = this.wsSubject.subscribe({
       next: msg => {
         this.dataSource = msg.pairs;
+        if (!!msg.changeLog) {
+          this.clientWatchEvents.emit(msg.changeLog);
+        }
       },
       error: err => {
         this.snackBar.open('An error occurred in KV Store connection.', 'OK', {
@@ -84,40 +89,9 @@ export class KvViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  putKV(key: string, value: string) {
-    if (!this.sendToNode) {
-      this.snackBar.open('Please select Node to send PUT to.', 'OK', {
-        panelClass: ['mat-toolbar', 'mat-primary'],
-        duration: 5000,
-      });
-      return;
-    }
-
-    this.isPutLoading = true;
-    this.keyValueService.putKeyValue(this.sendToNode, key, value)
-      .pipe(finalize(() => {
-        this.isPutLoading = false;
-      }))
-      .subscribe({
-        next: () => {
-          this.snackBar.open(`Successful PUT: \<${key}, ${value}\>.`, 'OK', {
-            panelClass: ['mat-toolbar', 'mat-warn'],
-            duration: 5000,
-          });
-        },
-        error: err => {
-          this.snackBar.open(`Failed PUT.`, 'OK', {
-            panelClass: ['mat-toolbar', 'mat-warn'],
-            duration: 5000,
-          });
-          console.error(err);
-        }
-      });
-  }
-
   deleteKV(key: string) {
     this.isDeleteLoading = true;
-    this.keyValueService.deleteKeyValue(this.deleteOnNode, key)
+    this.keyValueService.deleteKeyValue(this.nodeIndex, key)
       .pipe(finalize(() => {
         this.isDeleteLoading = false;
       }))

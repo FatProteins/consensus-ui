@@ -1,34 +1,31 @@
+<div style="display: flex; flex-direction: row; margin: 10px;">
+  <div *ngIf="isStepByStep; then disableStepByStep else enableStepByStep"></div>
+  <ng-template #disableStepByStep>
+    <button mat-raised-button [disabled]="isLoading" (click)="toggleStepByStep()" color="accent">
+      DISABLE STEP-BY-STEP
+    </button>
+  </ng-template>
+  <ng-template #enableStepByStep>
+    <button mat-raised-button [disabled]="isLoading" (click)="toggleStepByStep()" color="primary">
+      STEP-BY-STEP
+    </button>
+  </ng-template>
+  <button mat-raised-button [hidden]="!isStepByStep" [disabled]="isLoading" (click)="doNextStep()" color="primary">
+    <div>
+      <fa-icon [icon]="faPlay"></fa-icon>
+    </div>
+  </button>
+</div>
 <div class="card-box" style="display: flex; flex-direction: column;">
   <div style="display: flex; flex-direction: column; justify-content: space-evenly;">
     <div class="card-box" style="flex-grow: 1;">
-      <node-view nodeIndex="1"></node-view>
+      <node-view nodeIndex="1" [isStepByStep]="isStepByStep"></node-view>
     </div>
     <div class="card-box" style="flex-grow: 1;">
-      <node-view nodeIndex="2"></node-view>
+      <node-view nodeIndex="2" [isStepByStep]="isStepByStep"></node-view>
     </div>
     <div class="card-box" style="flex-grow: 1;">
-      <node-view nodeIndex="3"></node-view>
+      <node-view nodeIndex="3" [isStepByStep]="isStepByStep"></node-view>
     </div>
-  </div>
-  <div style="display: flex; flex-direction: row; margin: 10px;">
-    <div *ngIf="isStepByStep; then disableStepByStep else enableStepByStep"></div>
-    <ng-template #disableStepByStep>
-      <button mat-raised-button [disabled]="isLoading" (click)="toggleStepByStep()" color="accent">
-        DISABLE STEP-BY-STEP
-      </button>
-    </ng-template>
-    <ng-template #enableStepByStep>
-      <button mat-raised-button [disabled]="isLoading" (click)="toggleStepByStep()" color="primary">
-        STEP-BY-STEP
-      </button>
-    </ng-template>
-    <button mat-raised-button [hidden]="!isStepByStep" [disabled]="isLoading" (click)="doNextStep()" color="primary">
-      <div>
-        <fa-icon [icon]="faPlay"></fa-icon>
-      </div>
-    </button>
-  </div>
-  <div class="card-box">
-    <kv-view></kv-view>
   </div>
 </div>

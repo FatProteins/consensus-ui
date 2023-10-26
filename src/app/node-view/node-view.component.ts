@@ -1,9 +1,9 @@
-import {Component, inject, Input, numberAttribute, OnDestroy, OnInit} from '@angular/core';
+import {booleanAttribute, Component, inject, Input, numberAttribute, OnDestroy, OnInit} from '@angular/core';
 import {MatCardModule} from "@angular/material/card";
 import {MatButtonModule} from "@angular/material/button";
 import {NodeService} from "../service/node.service";
 import {MatSnackBar, MatSnackBarModule} from "@angular/material/snack-bar";
-import {ActionType} from "../model/node";
+import {ActionType, GetStateResponse, NodeState, NodeStateResponse} from "../model/node";
 import {CommonModule, NgIf} from "@angular/common";
 import {finalize, Subscription} from "rxjs";
 import {CdkVirtualForOf, CdkVirtualScrollViewport, ScrollingModule} from "@angular/cdk/scrolling";
@@ -12,6 +12,8 @@ import {webSocket, WebSocketSubject} from "rxjs/webSocket";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {FormsModule} from "@angular/forms";
 import {MatIconModule} from "@angular/material/icon";
+import {KvViewComponent} from "../kv-view/kv-view.component";
+import {PutKvComponent} from "../put-kv/put-kv.component";
 
 @Component({
   selector: 'node-view',
@@ -30,14 +32,26 @@ import {MatIconModule} from "@angular/material/icon";
     ExperimentalScrollingModule,
     MatSlideToggleModule,
     FormsModule,
-    MatIconModule
+    MatIconModule,
+    KvViewComponent,
+    PutKvComponent
   ]
 })
 export class NodeViewComponent implements OnInit, OnDestroy {
   @Input({transform: numberAttribute})
   nodeIndex: number;
+  @Input({transform: booleanAttribute})
+  isStepByStep: boolean;
 
-  logText: string = "Log Start";
+  nodeId: string;
+  memberState: string;
+  term: number;
+  index: number;
+  appliedIndex: number;
+
+  logText = "Log Start";
+  watchText = "Client Watch";
+  clientLogText = "Client Log";
   lockLogToBottom = true;
   showHeartbeatMessages = false;
 
@@ -49,33 +63,49 @@ export class NodeViewComponent implements OnInit, OnDestroy {
   nodeService = inject(NodeService);
   snackBar = inject(MatSnackBar);
 
-  wsSubject: WebSocketSubject<any>;
-  wsSubscription: Subscription;
+  logSubject: WebSocketSubject<string>;
+  logSubscription: Subscription;
+
+  clientLogSubject: WebSocketSubject<string>;
+  clientLogSubscription: Subscription;
+
+  nodeStateSubject: WebSocketSubject<NodeStateResponse>;
+  nodeStateSubscription: Subscription;
 
   ngOnInit() {
+    this.getState();
     this.subscribeToLog();
+    this.subscribeToClientLog();
+    this.subscribeToNodeState();
   }
 
   ngOnDestroy() {
-    this.wsSubject.complete();
-    this.wsSubject.unsubscribe();
-    this.wsSubscription.unsubscribe();
+    this.logSubject.complete();
+    this.logSubject.unsubscribe();
+    this.logSubscription.unsubscribe();
+
+    this.clientLogSubject.complete();
+    this.clientLogSubject.unsubscribe();
+    this.clientLogSubscription.unsubscribe();
+
+    this.nodeStateSubject.complete();
+    this.nodeStateSubject.unsubscribe();
+    this.nodeStateSubscription.unsubscribe();
   }
 
   subscribeToLog() {
     const nodePort = 8080 + this.nodeIndex - 1;
-    this.wsSubject = webSocket<string>({
+    this.logSubject = webSocket<string>({
       url: `ws://localhost:${nodePort}/education/subscribe-log`,
       deserializer: e => e.data
     });
-    this.wsSubscription = this.wsSubject.subscribe({
+    this.logSubscription = this.logSubject.subscribe({
       next: (msg: string) => {
         if (!msg || !this.showHeartbeatMessages && msg.includes('MsgHeartbeat')) {
           return;
         }
 
         if (this.logText.length > 10 ** 6) {
-          this.logText = this.logText.substring(10 ** 5);
           const newStartIdx = this.logText.indexOf('\n', 10 ** 5);
           this.logText.substring(newStartIdx);
         }
@@ -98,6 +128,129 @@ export class NodeViewComponent implements OnInit, OnDestroy {
     });
   }
 
+  subscribeToClientLog() {
+    const nodePort = 8080 + this.nodeIndex - 1;
+    this.clientLogSubject = webSocket<string>({
+      url: `ws://localhost:${nodePort}/education/subscribe-client-log`,
+      deserializer: e => e.data
+    });
+    this.clientLogSubscription = this.clientLogSubject.subscribe({
+      next: (msg: string) => {
+        if (!msg) {
+          return;
+        }
+
+        if (this.clientLogText.length > 10 ** 6) {
+          const newStartIdx = this.clientLogText.indexOf('\n', 10 ** 5);
+          this.clientLogText.substring(newStartIdx);
+        }
+
+        this.clientLogText += '\n' + msg;
+      },
+      error: err => {
+        this.snackBar.open(`An error occurred in client log connection.`, 'OK', {
+          panelClass: ['mat-toolbar', 'mat-warn'],
+          duration: 5000,
+        });
+        console.error(err);
+      },
+      complete: () => {
+        this.snackBar.open('Client log connection was closed.', 'OK', {
+          panelClass: ['mat-toolbar', 'mat-primary'],
+          duration: 5000,
+        });
+      }
+    });
+  }
+
+  getState() {
+    this.nodeService.getState(this.nodeIndex)
+      .pipe(finalize(() => {
+        this.isLoading = false;
+      }))
+      .subscribe({
+        next: (stateResponse: GetStateResponse) => {
+          switch (stateResponse.currentState) {
+            case NodeState.online:
+              this.isPaused = false;
+              this.isStopped = false;
+              break;
+            case NodeState.paused:
+              this.isPaused = true;
+              this.isStopped = false;
+              this.memberState = 'PAUSED';
+              break;
+            case NodeState.stopped:
+              this.isPaused = false;
+              this.isStopped = true;
+              this.memberState = 'STOPPED';
+              break;
+          }
+
+          this.isStepByStep = stateResponse.stepByStepMode;
+        },
+        error: err => {
+          this.snackBar.open(`Failed to get Node Status for Node ${this.nodeIndex}.`, 'OK', {
+            panelClass: ['mat-toolbar', 'mat-warn'],
+            duration: 5000,
+          });
+          console.error(err);
+        }
+      });
+  }
+
+  subscribeToNodeState() {
+    const nodePort = 8080 + this.nodeIndex - 1;
+    this.nodeStateSubject = webSocket<NodeStateResponse>({
+      url: `ws://localhost:${nodePort}/education/subscribe-state`
+    });
+    this.nodeStateSubscription = this.nodeStateSubject.subscribe({
+      next: (msg: NodeStateResponse) => {
+        if (!msg) {
+          return;
+        }
+
+        if (msg.statusError) {
+          if (!this.isStopped && !this.isPaused && !this.isStepByStep) {
+            this.memberState = 'UNKNOWN STATUS';
+          }
+
+          return;
+        }
+
+        this.memberState = msg.memberState;
+        this.nodeId = msg.nodeId;
+        this.term = msg.term;
+        this.index = msg.index;
+        this.appliedIndex = msg.appliedIndex;
+      },
+      error: err => {
+        this.snackBar.open(`An error occurred in Node State connection.`, 'OK', {
+          panelClass: ['mat-toolbar', 'mat-warn'],
+          duration: 5000,
+        });
+        console.error(err);
+      },
+      complete: () => {
+        this.snackBar.open('Node State connection was closed.', 'OK', {
+          panelClass: ['mat-toolbar', 'mat-primary'],
+          duration: 5000,
+        });
+      }
+    });
+  }
+
+  addWatchEvents(events: string[]) {
+    for (const event of events) {
+      if (this.watchText.length > 10 ** 6) {
+        const newStartIdx = this.watchText.indexOf('\n', 10 ** 5);
+        this.watchText.substring(newStartIdx);
+      }
+
+      this.watchText += '\n' + event;
+    }
+  }
+
   stopNode() {
     this.isLoading = true;
     this.nodeService.executeAction(this.nodeIndex, ActionType.STOP)
@@ -111,6 +264,7 @@ export class NodeViewComponent implements OnInit, OnDestroy {
             duration: 5000,
           });
           this.isStopped = true;
+          this.memberState = 'STOPPED';
         },
         error: err => {
           this.snackBar.open(`Failed to stop Node ${this.nodeIndex}`, 'OK', {
@@ -159,6 +313,7 @@ export class NodeViewComponent implements OnInit, OnDestroy {
             duration: 5000,
           });
           this.isPaused = true;
+          this.memberState = 'PAUSED';
         },
         error: err => {
           this.snackBar.open(`Failed to pause Node ${this.nodeIndex}`, 'OK', {

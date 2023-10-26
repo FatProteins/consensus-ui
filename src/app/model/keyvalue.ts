@@ -5,6 +5,7 @@ export class KeyValuePair {
 
 export class KeyValueGet {
   pairs: KeyValuePair[];
+  changeLog?: string[];
 }
 
 export class KeyValueDelete {

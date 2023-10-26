@@ -1,3 +1,20 @@
 [mat-raised-button] {
   margin: 5px;
 }
+
+textarea {
+  margin-left: 2px;
+  margin-right: 2px;
+}
+
+.member-leader {
+  color: purple;
+}
+
+.member-follower {
+  color: darkorange;
+}
+
+.member-unknown {
+  color: red;
+}
