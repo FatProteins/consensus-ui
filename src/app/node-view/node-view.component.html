@@ -9,14 +9,14 @@
   <mat-card-content>
     <div class="flex-column">
       <div class="flex-row">
-        <textarea #logTextArea style="width: 35%; height: 300px; resize: none;" readonly [value]="logText"
+        <textarea #logTextArea style="width: 35%; height: 315px; resize: none;" readonly [value]="logText"
                   [scrollTop]="lockLogToBottom ? logTextArea.scrollHeight : null"></textarea>
-        <textarea #watchTextArea style="width: 15%; height: 300px; resize: none;" readonly [value]="watchText"
+        <textarea #watchTextArea style="width: 15%; height: 315px; resize: none;" readonly [value]="watchText"
                   [scrollTop]="lockLogToBottom ? watchTextArea.scrollHeight : null"></textarea>
-        <textarea #clientLogTextArea style="width: 15%; height: 300px; resize: none;" readonly [value]="clientLogText"
+        <textarea #clientLogTextArea style="width: 15%; height: 315px; resize: none;" readonly [value]="clientLogText"
                   [scrollTop]="lockLogToBottom ? clientLogTextArea.scrollHeight : null"></textarea>
         <div style="vertical-align: top;display: inline-grid; width: 32%; max-width: 32%;">
-          <kv-view [nodeIndex]="nodeIndex" (clientWatchEvents)="addWatchEvents($event)"></kv-view>
+          <kv-view [nodeIndex]="nodeIndex" ></kv-view>
         </div>
       </div>
       <div class="flex-row">

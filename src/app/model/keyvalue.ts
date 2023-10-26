@@ -3,9 +3,12 @@ export class KeyValuePair {
   value: string;
 }
 
+export class KeyValueWatch {
+  changeLog?: string[];
+}
+
 export class KeyValueGet {
   pairs: KeyValuePair[];
-  changeLog?: string[];
 }
 
 export class KeyValueDelete {

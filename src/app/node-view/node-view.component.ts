@@ -1,9 +1,19 @@
-import {booleanAttribute, Component, inject, Input, numberAttribute, OnDestroy, OnInit} from '@angular/core';
+import {
+  booleanAttribute,
+  Component,
+  EventEmitter,
+  inject,
+  Input,
+  numberAttribute,
+  OnDestroy,
+  OnInit,
+  Output
+} from '@angular/core';
 import {MatCardModule} from "@angular/material/card";
 import {MatButtonModule} from "@angular/material/button";
 import {NodeService} from "../service/node.service";
 import {MatSnackBar, MatSnackBarModule} from "@angular/material/snack-bar";
-import {ActionType, GetStateResponse, NodeState, NodeStateResponse} from "../model/node";
+import {ActionType, GetStateResponse, LogUpdate, NodeState, NodeStateResponse, UpdateResponse} from "../model/node";
 import {CommonModule, NgIf} from "@angular/common";
 import {finalize, Subscription} from "rxjs";
 import {CdkVirtualForOf, CdkVirtualScrollViewport, ScrollingModule} from "@angular/cdk/scrolling";
@@ -14,6 +24,8 @@ import {FormsModule} from "@angular/forms";
 import {MatIconModule} from "@angular/material/icon";
 import {KvViewComponent} from "../kv-view/kv-view.component";
 import {PutKvComponent} from "../put-kv/put-kv.component";
+import {KeyValueGet, KeyValueWatch} from "../model/keyvalue";
+import {KeyValueService} from "../service/keyvalue.service";
 
 @Component({
   selector: 'node-view',
@@ -40,8 +52,10 @@ import {PutKvComponent} from "../put-kv/put-kv.component";
 export class NodeViewComponent implements OnInit, OnDestroy {
   @Input({transform: numberAttribute})
   nodeIndex: number;
-  @Input({transform: booleanAttribute})
+
   isStepByStep: boolean;
+  @Output()
+  stepByStepEvent = new EventEmitter<boolean>;
 
   nodeId: string;
   memberState: string;
@@ -61,57 +75,48 @@ export class NodeViewComponent implements OnInit, OnDestroy {
   isLoading = false;
 
   nodeService = inject(NodeService);
+  keyValueService = inject(KeyValueService);
   snackBar = inject(MatSnackBar);
 
-  logSubject: WebSocketSubject<string>;
-  logSubscription: Subscription;
-
-  clientLogSubject: WebSocketSubject<string>;
-  clientLogSubscription: Subscription;
-
-  nodeStateSubject: WebSocketSubject<NodeStateResponse>;
-  nodeStateSubscription: Subscription;
+  updateSubject: WebSocketSubject<UpdateResponse>;
+  updateSubscription: Subscription;
 
   ngOnInit() {
     this.getState().add(() => {
-      this.subscribeToLog();
-      this.subscribeToClientLog();
-      this.subscribeToNodeState();
+      this.subscribeToUpdates();
     });
   }
 
   ngOnDestroy() {
-    this.logSubject.complete();
-    this.logSubject.unsubscribe();
-    this.logSubscription.unsubscribe();
-
-    this.clientLogSubject.complete();
-    this.clientLogSubject.unsubscribe();
-    this.clientLogSubscription.unsubscribe();
-
-    this.nodeStateSubject.complete();
-    this.nodeStateSubject.unsubscribe();
-    this.nodeStateSubscription.unsubscribe();
+    this.updateSubject.complete();
+    this.updateSubject.unsubscribe();
+    this.updateSubscription.unsubscribe();
   }
 
-  subscribeToLog() {
+  subscribeToUpdates() {
     const nodePort = 8080 + this.nodeIndex - 1;
-    this.logSubject = webSocket<string>({
-      url: `ws://localhost:${nodePort}/education/subscribe-log`,
-      deserializer: e => e.data
+    this.updateSubject = webSocket<UpdateResponse>({
+      url: `ws://localhost:${nodePort}/education/updates`,
     });
-    this.logSubscription = this.logSubject.subscribe({
-      next: (msg: string) => {
-        if (!msg || !this.showHeartbeatMessages && msg.includes('MsgHeartbeat')) {
-          return;
+    this.updateSubscription = this.updateSubject.subscribe({
+      next: (msg: UpdateResponse) => {
+        switch (msg.updateType) {
+          case 'state':
+            this.handleNodeState(msg.updateObject as NodeStateResponse);
+            break;
+          case 'watch-kv':
+            this.handleWatchEvents(msg.updateObject as KeyValueWatch);
+            break;
+          case 'get-kv':
+            this.handleKvGet(msg.updateObject as KeyValueGet);
+            break;
+          case 'log':
+            this.handleLogUpdate(msg.updateObject as LogUpdate);
+            break;
+          case 'client-log':
+            this.handleClientLogUpdate(msg.updateObject as LogUpdate);
+            break;
         }
-
-        if (this.logText.length > 10 ** 6) {
-          const newStartIdx = this.logText.indexOf('\n', 10 ** 5);
-          this.logText.substring(newStartIdx);
-        }
-
-        this.logText += '\n' + msg;
       },
       error: err => {
         this.snackBar.open(`An error occurred in log connection.`, 'OK', {
@@ -129,39 +134,26 @@ export class NodeViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  subscribeToClientLog() {
-    const nodePort = 8080 + this.nodeIndex - 1;
-    this.clientLogSubject = webSocket<string>({
-      url: `ws://localhost:${nodePort}/education/subscribe-client-log`,
-      deserializer: e => e.data
-    });
-    this.clientLogSubscription = this.clientLogSubject.subscribe({
-      next: (msg: string) => {
-        if (!msg) {
-          return;
-        }
+  handleLogUpdate(msg: LogUpdate) {
+    if (!this.showHeartbeatMessages && msg.logMessage.includes('MsgHeartbeat')) {
+      return;
+    }
 
-        if (this.clientLogText.length > 10 ** 6) {
-          const newStartIdx = this.clientLogText.indexOf('\n', 10 ** 5);
-          this.clientLogText.substring(newStartIdx);
-        }
+    if (this.logText.length > 10 ** 6) {
+      const newStartIdx = this.logText.indexOf('\n', 10 ** 5);
+      this.logText.substring(newStartIdx);
+    }
 
-        this.clientLogText += '\n' + msg;
-      },
-      error: err => {
-        this.snackBar.open(`An error occurred in client log connection.`, 'OK', {
-          panelClass: ['mat-toolbar', 'mat-warn'],
-          duration: 5000,
-        });
-        console.error(err);
-      },
-      complete: () => {
-        this.snackBar.open('Client log connection was closed.', 'OK', {
-          panelClass: ['mat-toolbar', 'mat-primary'],
-          duration: 5000,
-        });
-      }
-    });
+    this.logText += '\n' + msg.logMessage;
+  }
+
+  handleClientLogUpdate(msg: LogUpdate) {
+    if (this.clientLogText.length > 10 ** 6) {
+      const newStartIdx = this.clientLogText.indexOf('\n', 10 ** 5);
+      this.clientLogText.substring(newStartIdx);
+    }
+
+    this.clientLogText += '\n' + msg.logMessage;
   }
 
   getState() {
@@ -189,6 +181,7 @@ export class NodeViewComponent implements OnInit, OnDestroy {
           }
 
           this.isStepByStep = stateResponse.stepByStepMode;
+          this.stepByStepEvent.emit(this.isStepByStep);
         },
         error: err => {
           this.snackBar.open(`Failed to get Node Status for Node ${this.nodeIndex}.`, 'OK', {
@@ -200,49 +193,28 @@ export class NodeViewComponent implements OnInit, OnDestroy {
       });
   }
 
-  subscribeToNodeState() {
-    const nodePort = 8080 + this.nodeIndex - 1;
-    this.nodeStateSubject = webSocket<NodeStateResponse>({
-      url: `ws://localhost:${nodePort}/education/subscribe-state`
-    });
-    this.nodeStateSubscription = this.nodeStateSubject.subscribe({
-      next: (msg: NodeStateResponse) => {
-        if (!msg) {
-          return;
-        }
-
-        if (msg.statusError) {
-          if (!this.isStopped && !this.isPaused && !this.isStepByStep) {
-            this.memberState = 'UNKNOWN STATUS';
-          }
-
-          return;
-        }
-
-        this.memberState = msg.memberState;
-        this.nodeId = msg.nodeId;
-        this.term = msg.term;
-        this.index = msg.index;
-        this.appliedIndex = msg.appliedIndex;
-      },
-      error: err => {
-        this.snackBar.open(`An error occurred in Node State connection.`, 'OK', {
-          panelClass: ['mat-toolbar', 'mat-warn'],
-          duration: 5000,
-        });
-        console.error(err);
-      },
-      complete: () => {
-        this.snackBar.open('Node State connection was closed.', 'OK', {
-          panelClass: ['mat-toolbar', 'mat-primary'],
-          duration: 5000,
-        });
+  handleNodeState(msg: NodeStateResponse) {
+    if (msg.statusError) {
+      if (!this.isStopped && !this.isPaused && !this.isStepByStep) {
+        this.memberState = 'UNKNOWN STATUS';
       }
-    });
+
+      return;
+    }
+
+    this.memberState = msg.memberState;
+    this.nodeId = msg.nodeId;
+    this.term = msg.term;
+    this.index = msg.index;
+    this.appliedIndex = msg.appliedIndex;
   }
 
-  addWatchEvents(events: string[]) {
-    for (const event of events) {
+  handleWatchEvents(msg: KeyValueWatch) {
+    if (!msg.changeLog) {
+      return;
+    }
+
+    for (const event of msg.changeLog) {
       if (this.watchText.length > 10 ** 6) {
         const newStartIdx = this.watchText.indexOf('\n', 10 ** 5);
         this.watchText.substring(newStartIdx);
@@ -250,6 +222,10 @@ export class NodeViewComponent implements OnInit, OnDestroy {
 
       this.watchText += '\n' + event;
     }
+  }
+
+  handleKvGet(msg: KeyValueGet) {
+    this.keyValueService.keyValueSubject.next(msg);
   }
 
   stopNode() {

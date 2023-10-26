@@ -1,18 +1,20 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
-import {KeyValueDelete, KeyValuePair} from "../model/keyvalue";
+import {KeyValueDelete, KeyValueGet, KeyValuePair} from "../model/keyvalue";
+import {Subject} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
 })
 export class KeyValueService {
   private readonly baseUrl: string = 'http://localhost:{port}/education';
-  private readonly getKVPath: string = '/get-kv'
   private readonly putKVPath: string = '/put-kv'
   private readonly deleteKVPath: string = '/delete-kv'
 
   constructor(private readonly httpClient: HttpClient) {
   }
+
+  public keyValueSubject = new Subject<KeyValueGet>();
 
   putKeyValue(nodeIndex: number, key: string, value: string) {
     const port = 8080 + nodeIndex - 1;

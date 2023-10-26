@@ -22,13 +22,13 @@
 <div class="card-box" style="display: flex; flex-direction: column;">
   <div style="display: flex; flex-direction: column; justify-content: space-evenly;">
     <div class="card-box" style="flex-grow: 1;">
-      <node-view nodeIndex="1" [isStepByStep]="isStepByStep"></node-view>
+      <node-view nodeIndex="1" (stepByStepEvent)="setStepByStep($event)"></node-view>
     </div>
     <div class="card-box" style="flex-grow: 1;">
-      <node-view nodeIndex="2" [isStepByStep]="isStepByStep"></node-view>
+      <node-view nodeIndex="2" (stepByStepEvent)="setStepByStep($event)"></node-view>
     </div>
     <div class="card-box" style="flex-grow: 1;">
-      <node-view nodeIndex="3" [isStepByStep]="isStepByStep"></node-view>
+      <node-view nodeIndex="3" (stepByStepEvent)="setStepByStep($event)"></node-view>
     </div>
   </div>
 </div>

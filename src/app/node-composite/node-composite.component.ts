@@ -28,11 +28,15 @@ import {MatToolbarModule} from "@angular/material/toolbar";
   ]
 })
 export class NodeCompositeComponent {
-  isStepByStep = false;
+  isStepByStep: boolean;
   isLoading = false;
 
   nodeService = inject(NodeService);
   snackBar = inject(MatSnackBar);
+
+  setStepByStep(enabled: boolean) {
+    this.isStepByStep = enabled;
+  }
 
   toggleStepByStep() {
     this.isLoading = true;

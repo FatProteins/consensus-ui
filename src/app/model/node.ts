@@ -36,3 +36,12 @@ export class GetStateResponse {
   currentState: string;
   stepByStepMode: boolean;
 }
+
+export class LogUpdate {
+  logMessage: string;
+}
+
+export class UpdateResponse {
+  updateType: string;
+  updateObject: any;
+}
