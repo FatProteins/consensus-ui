@@ -1,23 +1,24 @@
 <mat-card>
   <mat-card-header>
     <mat-card-title>Node {{nodeIndex}}</mat-card-title>
-    <mat-card-subtitle>localhost:{{2379 + nodeIndex - 1}} | Term: {{term}} | Index: {{index}} | Applied
-      Index: {{appliedIndex}} | Member ID: {{nodeId}} | <span
+    <mat-card-subtitle>localhost:{{2379 + nodeIndex - 1}} | Member ID: {{nodeId}}
+      <br>Term: {{term}} | Index: {{index}} | Applied
+      Index: {{appliedIndex}} | <span
         [ngClass]="{'member-leader' : memberState === 'LEADER', 'member-follower' : memberState === 'FOLLOWER', 'member-unknown' : memberState === 'UNKNOWN STATUS' }">{{memberState}}</span>
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    <div class="flex-column">
-      <div class="flex-row">
-        <textarea #logTextArea style="width: 35%; height: 315px; resize: none;" readonly [value]="logText"
-                  [scrollTop]="lockLogToBottom ? logTextArea.scrollHeight : null"></textarea>
-        <textarea #watchTextArea style="width: 15%; height: 315px; resize: none;" readonly [value]="watchText"
+    <div style="display: flex; flex-direction: column;">
+      <textarea #logTextArea style="height: 300px; resize: none;" readonly [value]="logText"
+                [scrollTop]="lockLogToBottom ? logTextArea.scrollHeight : null"></textarea>
+      <div style="display: flex; flex-direction: row; justify-content: space-between;">
+        <textarea #watchTextArea style="height: 300px; resize: none; flex-grow: 1;" readonly [value]="watchText"
                   [scrollTop]="lockLogToBottom ? watchTextArea.scrollHeight : null"></textarea>
-        <textarea #clientLogTextArea style="width: 15%; height: 315px; resize: none;" readonly [value]="clientLogText"
+        <textarea #clientLogTextArea style="height: 300px; resize: none; flex-grow: 1;" readonly [value]="clientLogText"
                   [scrollTop]="lockLogToBottom ? clientLogTextArea.scrollHeight : null"></textarea>
-        <div style="vertical-align: top;display: inline-grid; width: 32%; max-width: 32%;">
-          <kv-view [nodeIndex]="nodeIndex" ></kv-view>
-        </div>
+      </div>
+      <div style="width: 100%;">
+        <kv-view [nodeIndex]="nodeIndex"></kv-view>
       </div>
       <div class="flex-row">
         <mat-slide-toggle [(ngModel)]="lockLogToBottom" color="primary" style="margin: 10px;">Lock to Bottom

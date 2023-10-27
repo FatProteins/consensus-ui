@@ -8,12 +8,11 @@
       <mat-label>Value</mat-label>
       <input matInput type="text" #putValue required>
     </mat-form-field>
-
     <button mat-raised-button [disabled]="!nodeIndex || !putKey.value || !putValue.value || isPutLoading"
             (click)="putKV(putKey.value, putValue.value); putKey.value = ''; putValue.value = '';">PUT
     </button>
   </form>
-  <div style="align-self: center" *ngIf="isPutLoading">
+  <div style="align-self: center;" *ngIf="isPutLoading">
     <mat-spinner diameter="25">
     </mat-spinner>
   </div>
